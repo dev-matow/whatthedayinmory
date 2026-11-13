@@ -23,8 +23,8 @@
 <p class="section-label">ส่วนที่ 3 · ไทม์ไลน์เงินคงเหลือรายวัน</p>
 <section class="card" aria-labelledby="timeline-title">
 <h2 id="timeline-title">แต่ละวันจะเหลือเงินเท่าไหร่?</h2>
-<p class="timeline-intro">ยอดคงเหลือปลายวัน ตั้งแต่วันนี้ถึงวันก่อนเงินออก โดยใช้เต็มงบรายวัน · หากยังไม่กรอกยอดจริง ใช้เงินตั้งต้น 4,000 บาท</p>
-<div id="timeline-status" class="timeline-empty" role="status">ใช้เงินตั้งต้น 4,000 บาทเมื่อยังไม่กรอกยอดจริง</div>
+<p class="timeline-intro">ยอดคงเหลือปลายวัน ตั้งแต่วันนี้ถึงวันก่อนเงินออก โดยใช้เต็มงบรายวัน · หากยังไม่กรอกยอดจริง ใช้แผนเงินเข้ารอบละ 4,000 บาท ทุกวันที่ 5 และ 20 หักค่าใช้จ่ายตั้งแต่ต้นรอบ</p>
+<div id="timeline-status" class="timeline-empty" role="status">ใช้แผนเงินเข้ารอบละ 4,000 บาท ทุกวันที่ 5 และ 20 เมื่อยังไม่กรอกยอดจริง</div>
 <ol id="timeline" class="timeline hidden" aria-label="ยอดเงินคงเหลือปลายวัน"></ol>
 <p class="hint">เป็นยอดคาดการณ์ ไม่รวมรายรับหรือรายจ่ายเพิ่มเติม · หลังใช้จ่าย ให้อัปเดตยอดจริงในส่วนที่ 2</p>
 </section>
@@ -56,14 +56,14 @@ function renderTimeline(today,c,balance,useDefault=false){
  if(!c.days){status.textContent='เงินเดือนออกวันนี้ เมื่อเงินเข้า ให้อัปเดตยอดจริงและติ๊กว่าเงินเดือนเข้าแล้ว เพื่อดูไทม์ไลน์รอบใหม่';return;}
  const daily=Math.floor(balance/c.days);
  status.className='timeline-summary';
- status.textContent=`${useDefault?'เงินตั้งต้น (ยังไม่กรอกยอดจริง)':'เริ่มจากยอดจริง'} ${money(balance)} บาท · ใช้วันละ ${money(daily)} บาท · เงินเข้ารอบถัดไป ${dateText(c.next)}`;
+ status.textContent=useDefault?`ตามแผน: เงินเข้า 4,000 บาท เมื่อ ${dateText(c.start)} · วันนี้ควรเหลือ ${money(balance)} บาท · งบเฉลี่ยวันละ ${money(400000/c.length)} บาท · เงินเข้ารอบถัดไป ${dateText(c.next)}`:`เริ่มจากยอดจริง ${money(balance)} บาท · ใช้วันละ ${money(daily)} บาท · เงินเข้ารอบถัดไป ${dateText(c.next)}`;
  const rows=document.createDocumentFragment();
  for(let i=0;i<c.days;i++){
   const date=new Date(today);date.setDate(date.getDate()+i);
-  const remaining=balance-daily*(i+1),item=document.createElement('li'),row=document.createElement('div'),label=document.createElement('span'),amount=document.createElement('span'),note=document.createElement('p');
+  const remaining=useDefault?Math.ceil(400000*(c.days-i-1)/c.length):balance-daily*(i+1),spent=useDefault?Math.ceil(400000*(c.days-i)/c.length)-remaining:daily,item=document.createElement('li'),row=document.createElement('div'),label=document.createElement('span'),amount=document.createElement('span'),note=document.createElement('p');
   row.className='timeline-row';label.className='timeline-date';amount.className='timeline-balance';note.className='timeline-note';
   label.textContent=(i===0?'วันนี้ · ':'')+dateText(date);amount.textContent=money(remaining)+' บาท';
-  note.textContent=`ใช้ ${money(daily)} บาท`+(i===c.days-1?' · วันสุดท้ายก่อนเงินออก':'');
+  note.textContent=`ใช้ ${money(spent)} บาท`+(i===c.days-1?' · วันสุดท้ายก่อนเงินออก':'');
   row.append(label,amount);item.append(row,note);rows.append(item);
  }
  list.append(rows);list.classList.remove('hidden');
@@ -80,7 +80,7 @@ function render(){
  $('warning').classList.add('hidden');
  const raw=$('balance').value,balance=Math.round(Number(raw)*100);
  const validBalance=!!raw.trim()&&$('balance').validity.valid&&Number.isFinite(balance)&&balance>=0;
- renderTimeline(today,c,!raw.trim()?400000:(validBalance?balance:null),!raw.trim());
+ renderTimeline(today,c,!raw.trim()?c.required:(validBalance?balance:null),!raw.trim());
  if(!raw.trim()||!$('balance').validity.valid||!Number.isFinite(balance)||balance<0){$('difference').textContent='—';$('daily').textContent='—';$('formula').textContent='ใส่ยอดเงินจริงตั้งแต่ 0 บาทขึ้นไปเพื่อคำนวณ';$('explanation').textContent='งบรายวัน = ยอดเงินจริงทั้งหมด ÷ วันที่เหลือถึงเงินเดือนออก';return;}
  const diff=balance-c.required;
  $('difference-label').textContent=diff<0?'ต่ำกว่ายอดที่ควรมี':'มากกว่ายอดที่ควรมี';$('difference').textContent=money(Math.abs(diff))+' ฿';
